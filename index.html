@@ -217,27 +217,29 @@
   });
 
   form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Collect form data
-    const data = Object.fromEntries(new FormData(form).entries());
-    console.log("Form Data:", data);
+  const data = Object.fromEntries(new FormData(form).entries());
 
-    // Call Gemini with patient JSON
+  // Show loading state
+  result.style.display = "block";
+  result.innerHTML = `<p><em>Loading...</em></p>`;
+  result.scrollIntoView({ behavior: "smooth" });
+
+  try {
+    // --- Call Gemini or backend here ---
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Given this patient data: ${JSON.stringify(data)}, 
                  predict if they are at risk of heart disease. 
-                 Output JSON only, following the schema. 
-                 Risk should be either High, Moderate or Low and it should depend on probability.
-                 Probability should be atleast 3 floating points, try to give 0.xxx`,
+                 Output JSON only, following the schema.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            risk: { type: Type.STRING }, // "low", "medium", "high"
-            probability: { type: Type.NUMBER }, // 0–1
+            risk: { type: Type.STRING },
+            probability: { type: Type.NUMBER },
             explanation: { type: Type.STRING }
           },
           propertyOrdering: ["risk", "probability", "explanation"],
@@ -245,31 +247,35 @@
       },
     });
 
-    var prediction = await response.text;
-    prediction= JSON.parse(prediction);
-    prediction.risk = prediction.risk.charAt(0).toUpperCase() + prediction.risk.slice(1); // Capitalize first letter
-    console.log(prediction);
-    // Show AI response
-    result.style.display = "block";
-  result.innerHTML = `
-    <h2>Prediction Result</h2>
-    <div class="summary">
-      <div>
-        <h3>Risk Level</h3>
-        <p>${prediction.risk}</p>
+    // Parse the JSON string Gemini returned
+    const prediction = JSON.parse(response.text);
+
+    // Replace loading with formatted result
+    result.innerHTML = `
+      <h2>Prediction Result</h2>
+      <div class="summary">
+        <div>
+          <h3>Risk Level</h3>
+          <p>${prediction.risk}</p>
+        </div>
+        <div>
+          <h3>Probability</h3>
+          <p>${(prediction.probability * 100).toFixed(1)}%</p>
+        </div>
       </div>
       <div>
-        <h3>Probability</h3>
-        <p>${(prediction.probability * 100).toFixed(1)}%</p>
+        <h3>Explanation</h3>
+        <p>${prediction.explanation}</p>
       </div>
-    </div>
-    <div>
-      <h3>Explanation</h3>
-      <p>${prediction.explanation}</p>
-    </div>
-  `;
+    `;
+  } catch (err) {
+    // Show error if something goes wrong
+    result.innerHTML = `<p style="color:#ff6464"><strong>Error:</strong> ${err.message}</p>`;
+  }
+
   result.scrollIntoView({ behavior: "smooth" });
-  });
+});
 </script>
 </body>
 </html>
+
