@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Heart Health Intake</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#161b2e; --muted:#8b93a7; --text:#e6e9f2; --accent:#6aa9ff;
+      --ring:#2a3353; --danger:#ff6464; --ok:#5ad19a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif; color:var(--text); background:linear-gradient(180deg,#0b1020,#121735 50%, #0b1020 100%);}    
+    .wrap{max-width:720px; margin-inline:auto; padding:20px}
+    header{display:flex; align-items:center; gap:12px; margin:8px 0 16px}
+    header h1{font-size:1.35rem; margin:0; letter-spacing:.2px}
+    header .tag{font-size:.75rem; padding:4px 8px; border-radius:999px; background:rgba(106,169,255,.15); color:var(--accent); border:1px solid rgba(106,169,255,.25)}
+
+    .card{background:var(--card); border:1px solid var(--ring); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h2{font-size:1.05rem; margin:4px 0 12px}
+    .sub{font-size:.85rem; color:var(--muted); margin-top:-4px}
+
+    form{display:grid; gap:14px}
+    fieldset{margin:0; padding:0; border:0; display:grid; gap:12px}
+    legend{font-weight:600; font-size:.95rem; margin-bottom:8px}
+
+    .row{display:grid; gap:10px}
+    @media (min-width:480px){.row{grid-template-columns:1fr 1fr}}
+
+    label{display:block; font-size:.9rem; margin-bottom:6px}
+    .opt{color:var(--muted); font-weight:500; font-size:.8rem}
+
+    input[type="number"], select{width:100%; appearance:none; border:1px solid var(--ring); background:#0f1430; color:var(--text); padding:12px 12px; border-radius:12px; font-size:1rem; outline:none}
+    input[type="number"]:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 4px rgba(106,169,255,.15)}
+
+    .hint{font-size:.78rem; color:var(--muted); margin-top:6px}
+    .required-dot{display:inline-block; width:.45rem; height:.45rem; background:var(--ok); border-radius:50%; margin-left:6px}
+
+    .switch{display:flex; gap:8px; align-items:center}
+    .switch input{display:none}
+    .switch span{flex:1; text-align:center; padding:10px 12px; border:1px solid var(--ring); border-radius:12px; background:#0f1430; user-select:none; cursor:pointer}
+    .switch input:checked + span{border-color:var(--accent); box-shadow:0 0 0 4px rgba(106,169,255,.15)}
+
+    .actions{display:flex; gap:10px; margin-top:6px}
+    button{width:100%; padding:14px 14px; border-radius:14px; border:1px solid var(--ring); background:linear-gradient(180deg,#1a2140,#141a36); color:var(--text); font-weight:700; font-size:1rem}
+    button.primary{background:linear-gradient(180deg,#2a58ff,#2346c4); border-color:#2243bd}
+    button:active{transform:translateY(1px)}
+    .note{font-size:.82rem; color:var(--muted)}
+    .footer{margin-top:16px; font-size:.75rem; color:var(--muted); text-align:center}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--ring); color:var(--muted); font-size:.7rem}
+  /* Prediction result card */
+#result {
+  display: none;              /* JS will show it */
+  margin-top: 14px;
+  background: #0f1430;
+  border: 1px solid #2a3353;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+#result h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+#result .summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+#result .pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #2a3353;
+  font-size: .75rem;
+  color: #8b93a7;
+}
+
+/* Pretty JSON block */
+#result pre {
+  margin: 0;
+  padding: 12px;
+  background: #0b1026;
+  border: 1px solid #242c4a;
+  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .9rem;
+  line-height: 1.35;
+  white-space: pre-wrap;    /* wrap long lines */
+  word-break: break-word;   /* break super long tokens */
+  overflow-wrap: anywhere;
+}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Heart Health Intake</h1>
+    </header>
+
+    
+    <form id="heart-form" class="card" novalidate>
+      <h2>Patient Details</h2>
+
+      <fieldset aria-labelledby="required-title">
+        <legend id="required-title">Required
+          <span class="pill" title="These are required">required</span>
+        </legend>
+
+        <div class="row">
+          <div>
+            <label for="age">Age <span class="required-dot" title="required"></span></label>
+            <input id="age" name="age" type="number" inputmode="numeric" placeholder="e.g., 45" min="1" max="120" required />
+            <div class="hint">Years (1–120)</div>
+          </div>
+          <div>
+            <label for="sex">Gender <span class="required-dot" title="required"></span></label>
+            <select id="sex" name="sex" required>
+              <option value="" disabled selected>Select</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="cp">Chest Pain Type <span class="required-dot" title="required"></span></label>
+          <select id="cp" name="chest_pain_type" required>
+            <option value="" disabled selected>Select type</option>
+            <option value="typical">Typical angina</option>
+            <option value="atypical">Atypical angina</option>
+            <option value="nonanginal">Non‑anginal pain</option>
+            <option value="asymptomatic">Asymptomatic</option>
+          </select>
+          <div class="hint">Dataset uses 4 classes</div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="trestbps">Resting Blood Pressure (mmHg) <span class="required-dot" title="required"></span></label>
+            <input id="trestbps" name="resting_bp" type="number" inputmode="numeric" placeholder="e.g., 130" min="50" max="250" required />
+            <div class="hint">Systolic, typical range 90–180</div>
+          </div>
+          <div>
+            <label for="thalach">Max Heart Rate Achieved (bpm) <span class="required-dot" title="required"></span></label>
+            <input id="thalach" name="max_hr" type="number" inputmode="numeric" placeholder="e.g., 170" min="60" max="220" required />
+            <div class="hint">Peak HR from test/wearable</div>
+          </div>
+        </div>
+
+        <div>
+          <label>Exercise‑Induced Angina <span class="required-dot" title="required"></span></label>
+          <div class="row">
+            <label class="switch">
+              <input type="radio" name="exang" value="no" required>
+              <span>No</span>
+            </label>
+            <label class="switch">
+              <input type="radio" name="exang" value="yes" required>
+              <span>Yes</span>
+            </label>
+          </div>
+          <div class="hint">Report of chest pain during exertion</div>
+        </div>
+      </fieldset>
+
+      <fieldset aria-labelledby="optional-title">
+        <legend id="optional-title">Optional
+          <span class="pill" title="These are optional">optional</span>
+        </legend>
+
+        <div class="row">
+          <div>
+            <label for="chol">Serum Cholesterol (mg/dL) <span class="opt">optional</span></label>
+            <input id="chol" name="cholesterol" type="number" inputmode="numeric" placeholder="e.g., 240" min="80" max="600" />
+            <div class="hint">Fasting lipid profile value</div>
+          </div>
+          <div>
+            <label for="fbs">Fasting Blood Sugar (mg/dL) <span class="opt">optional</span></label>
+            <input id="fbs" name="fbs" type="number" inputmode="numeric" placeholder="e.g., 110" min="50" max="400" />
+            <div class="hint">Value; >120 mg/dL is considered high in the dataset</div>
+          </div>
+        </div>
+
+        <div>
+          <label for="restecg">Resting ECG Result (0–2) <span class="opt">optional</span></label>
+          <select id="restecg" name="rest_ecg">
+            <option value="" selected>Not provided</option>
+            <option value="0">0 – Normal</option>
+            <option value="1">1 – ST‑T wave abnormality</option>
+            <option value="2">2 – Probable/definite LVH (Estes)</option>
+          </select>
+          <div class="hint">Pick the coded category if known</div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="reset" aria-label="Reset form">Reset</button>
+        <button class="primary" type="submit" aria-label="Submit form">Submit</button>
+      </div>
+    </form>
+
+    <div id="result" class="card" style="display:none"></div>
+  </div>
+
+  <script type="module">
+  import { GoogleGenAI, Type } from "https://esm.sh/@google/genai";
+
+  const form = document.getElementById("heart-form");
+  const result = document.getElementById("result");
+
+  // Initialize Gemini client
+  const ai = new GoogleGenAI({
+    apiKey: "AIzaSyBjbLOq9vZIHEID66dZdPX2VH-dZ509mFQ" 
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Collect form data
+    const data = Object.fromEntries(new FormData(form).entries());
+    console.log("Form Data:", data);
+
+    // Call Gemini with patient JSON
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Given this patient data: ${JSON.stringify(data)}, 
+                 predict if they are at risk of heart disease. 
+                 Output JSON only, following the schema. 
+                 Risk should be either High, Moderate or Low and it should depend on probability.
+                 Probability should be atleast 3 floating points, try to give 0.xxx`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            risk: { type: Type.STRING }, // "low", "medium", "high"
+            probability: { type: Type.NUMBER }, // 0–1
+            explanation: { type: Type.STRING }
+          },
+          propertyOrdering: ["risk", "probability", "explanation"],
+        },
+      },
+    });
+
+    var prediction = await response.text;
+    prediction= JSON.parse(prediction);
+    prediction.risk = prediction.risk.charAt(0).toUpperCase() + prediction.risk.slice(1); // Capitalize first letter
+    console.log(prediction);
+    // Show AI response
+    result.style.display = "block";
+  result.innerHTML = `
+    <h2>Prediction Result</h2>
+    <div class="summary">
+      <div>
+        <h3>Risk Level</h3>
+        <p>${prediction.risk}</p>
+      </div>
+      <div>
+        <h3>Probability</h3>
+        <p>${(prediction.probability * 100).toFixed(1)}%</p>
+      </div>
+    </div>
+    <div>
+      <h3>Explanation</h3>
+      <p>${prediction.explanation}</p>
+    </div>
+  `;
+  result.scrollIntoView({ behavior: "smooth" });
+  });
+</script>
+</body>
+</html>
